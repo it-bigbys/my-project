@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "1015708422039",
+    "firebase_url": "https://bigbys-management-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "bigbys-management",
+    "storage_bucket": "bigbys-management.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1015708422039:android:4434eea7c6c8c70071fed2",
+        "android_client_info": {
+          "package_name": "com.example.team_collab"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA7s8JE0QLiP6TL4h1sTewgwvB_v_igtHo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
