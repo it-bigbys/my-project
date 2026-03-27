@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'sidebar.dart';
 
+enum DeviceType { mobile, tablet, desktop }
+
 class ResponsiveScaffold extends StatelessWidget {
   final Widget body;
   final String currentRoute;
@@ -15,26 +17,41 @@ class ResponsiveScaffold extends StatelessWidget {
     this.floatingActionButton,
   });
 
+  static DeviceType getDeviceType(BuildContext context) {
+    double width = MediaQuery.of(context).size.width;
+    if (width < 600) return DeviceType.mobile;
+    if (width < 1100) return DeviceType.tablet;
+    return DeviceType.desktop;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bool isMobile = MediaQuery.of(context).size.width < 800;
+    final deviceType = getDeviceType(context);
+    final theme = Theme.of(context);
+    final bool isMobile = deviceType == DeviceType.mobile;
+    final bool isTablet = deviceType == DeviceType.tablet;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
-      appBar: isMobile
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: isMobile || isTablet
           ? AppBar(
-              title: Text(title, style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
-              backgroundColor: const Color(0xFF1E293B),
+              title: Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              backgroundColor: theme.appBarTheme.backgroundColor,
               elevation: 0,
-              iconTheme: const IconThemeData(color: Colors.white),
+              centerTitle: isMobile,
             )
           : null,
-      drawer: isMobile ? Sidebar(currentRoute: currentRoute, isDrawer: true) : null,
+      drawer: isMobile || isTablet ? Sidebar(currentRoute: currentRoute, isDrawer: true) : null,
       floatingActionButton: floatingActionButton,
       body: Row(
         children: [
-          if (!isMobile) Sidebar(currentRoute: currentRoute),
-          Expanded(child: body),
+          // Sidebar is only permanent on Desktop
+          if (deviceType == DeviceType.desktop) 
+            Sidebar(currentRoute: currentRoute),
+          
+          Expanded(
+            child: body,
+          ),
         ],
       ),
     );

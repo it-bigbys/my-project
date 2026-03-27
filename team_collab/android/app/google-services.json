@@ -13,7 +13,16 @@
           "package_name": "com.example.team_collab"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1015708422039-pjodglga18sp3scf0r5kchmnrqdemo5i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.team_collab",
+            "certificate_hash": "1c89b9da920f63687b4c81ddc6269c729e250235"
+          }
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA7s8JE0QLiP6TL4h1sTewgwvB_v_igtHo"

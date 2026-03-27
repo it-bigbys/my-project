@@ -8,8 +8,9 @@ import 'screens/dashboard/dashboard_screen.dart';
 import 'screens/chat/chat_screen.dart';
 import 'screens/tasks/tasks_screen.dart';
 import 'screens/calendar/calendar_screen.dart';
-import 'screens/notifications/notifications_screen.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/users/users_screen.dart';
+import 'screens/loading_screen.dart';
 
 class TeamCollabApp extends StatelessWidget {
   const TeamCollabApp({super.key});
@@ -17,6 +18,7 @@ class TeamCollabApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final themeProvider = context.watch<ThemeProvider>();
+    final authProvider = context.read<AuthProvider>();
     
     return MaterialApp.router(
       title: 'TeamCollab',
@@ -24,28 +26,34 @@ class TeamCollabApp extends StatelessWidget {
       themeMode: themeProvider.themeMode,
       theme: ThemeProvider.lightTheme,
       darkTheme: ThemeProvider.darkTheme,
-      routerConfig: _router(context),
+      routerConfig: _router(context, authProvider),
     );
   }
 
-  GoRouter _router(BuildContext context) => GoRouter(
+  GoRouter _router(BuildContext context, AuthProvider auth) => GoRouter(
     initialLocation: '/login',
+    refreshListenable: auth,
     redirect: (context, state) {
-      final auth = context.read<AuthProvider>();
       final isLoggedIn = auth.isLoggedIn;
-      final isLoginRoute = state.matchedLocation == '/login';
+      final location = state.matchedLocation;
+      final isLoginRoute = location == '/login';
+      
       if (!isLoggedIn && !isLoginRoute) return '/login';
-      if (isLoggedIn && isLoginRoute) return '/dashboard';
+      
+      // If logging in, send to loading screen first
+      if (isLoggedIn && isLoginRoute) return '/loading';
+      
       return null;
     },
     routes: [
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(path: '/loading', builder: (_, __) => const LoadingScreen()),
       GoRoute(path: '/dashboard', builder: (_, __) => const DashboardScreen()),
       GoRoute(path: '/chat', builder: (_, __) => const ChatScreen()),
       GoRoute(path: '/tasks', builder: (_, __) => const TasksScreen()),
       GoRoute(path: '/calendar', builder: (_, __) => const CalendarScreen()),
-      GoRoute(path: '/notifications', builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
+      GoRoute(path: '/users', builder: (_, __) => const UsersScreen()),
     ],
   );
 }

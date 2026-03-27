@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../models/user.dart' as model;
 import '../../widgets/responsive_scaffold.dart';
 
 class UsersScreen extends StatelessWidget {
@@ -61,8 +62,42 @@ class UsersScreen extends StatelessWidget {
                             ],
                           ),
                         ),
-                        _RoleBadge(role: user.role),
-                      ],
+                        _RoleBadge(role: user.role),                        if (auth.isSuperAdmin) ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.edit, size: 20),
+                            onPressed: () => _showEditUserDialog(context, user),
+                            tooltip: 'Edit user',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Delete User'),
+                                  content: Text('Delete ${user.name}? This cannot be undone.'),
+                                  actions: [
+                                    TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                    TextButton(
+                                      onPressed: () async {
+                                        Navigator.pop(context);
+                                        try {
+                                          await context.read<AuthProvider>().deleteUser(user.id);
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User deleted successfully')));
+                                        } catch (e) {
+                                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed deleting user: $e')));
+                                        }
+                                      },
+                                      child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            tooltip: 'Delete user',
+                          ),
+                        ],                      ],
                     ),
                   );
                 },
@@ -77,6 +112,10 @@ class UsersScreen extends StatelessWidget {
   void _showAddUserDialog(BuildContext context) {
     showDialog(context: context, builder: (_) => const _AddUserDialog());
   }
+
+  void _showEditUserDialog(BuildContext context, model.User user) {
+    showDialog(context: context, builder: (_) => _EditUserDialog(user: user));
+  }
 }
 
 class _RoleBadge extends StatelessWidget {
@@ -88,7 +127,10 @@ class _RoleBadge extends StatelessWidget {
     Color color = Colors.grey;
     if (role == 'Super Admin') color = const Color(0xFFEF4444);
     else if (role == 'Admin') color = const Color(0xFFFFD700);
-    else if (role == 'User') color = const Color(0xFF10B981);
+    else if (role == 'IT') color = const Color(0xFF3B82F6);
+    else if (role == 'GOM') color = const Color(0xFF8B5CF6);
+    else if (role == 'Branch') color = const Color(0xFF10B981);
+    else if (role == 'Secretary') color = const Color(0xFFF59E0B);
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -110,7 +152,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _selectedRole = 'User';
+  String _selectedRole = 'Branch';
   bool _isLoading = false;
 
   @override
@@ -169,7 +211,8 @@ class _AddUserDialogState extends State<_AddUserDialog> {
               DropdownButtonFormField<String>(
                 value: _selectedRole,
                 dropdownColor: Theme.of(context).colorScheme.surface,
-                items: ['Super Admin', 'Admin', 'User'].map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                items: ['Super Admin', 'Admin', 'IT', 'GOM', 'Branch', 'Secretary']
+                    .map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
                 onChanged: (v) => setState(() => _selectedRole = v!),
                 decoration: _inputDec(''),
               ),
@@ -197,6 +240,126 @@ class _AddUserDialogState extends State<_AddUserDialog> {
       TextFormField(
         controller: ctrl,
         obscureText: isPassword,
+        decoration: _inputDec(hint),
+        validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+      ),
+    ]);
+  }
+
+  InputDecoration _inputDec(String hint) => InputDecoration(
+    hintText: hint,
+    filled: true,
+    fillColor: Theme.of(context).scaffoldBackgroundColor,
+    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: Theme.of(context).dividerColor)),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+  );
+}
+
+class _EditUserDialog extends StatefulWidget {
+  final model.User user;
+  const _EditUserDialog({required this.user});
+
+  @override
+  State<_EditUserDialog> createState() => _EditUserDialogState();
+}
+
+class _EditUserDialogState extends State<_EditUserDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _emailController;
+  String _selectedRole = 'Branch';
+  bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.user.name);
+    _emailController = TextEditingController(text: widget.user.email);
+    _selectedRole = widget.user.role;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() => _isLoading = true);
+
+    try {
+      await context.read<AuthProvider>().updateUser(
+            widget.user.id,
+            _nameController.text.trim(),
+            _emailController.text.trim(),
+            _selectedRole,
+          );
+      if (mounted) {
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update user: $e')));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        width: 450,
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Edit User', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 24),
+              _field('Full Name', _nameController, 'e.g. John Doe'),
+              const SizedBox(height: 16),
+              _field('Email Address', _emailController, 'e.g. john@team.com'),
+              const SizedBox(height: 16),
+              const Text('Assign Role', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey)),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedRole,
+                dropdownColor: Theme.of(context).colorScheme.surface,
+                items: ['Super Admin', 'Admin', 'IT', 'GOM', 'Branch', 'Secretary']
+                    .map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                onChanged: (v) => setState(() => _selectedRole = v ?? _selectedRole),
+                decoration: _inputDec(''),
+              ),
+              const SizedBox(height: 32),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                const SizedBox(width: 12),
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(backgroundColor: Theme.of(context).primaryColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14)),
+                  child: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : const Text('Update User'),
+                ),
+              ]),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _field(String label, TextEditingController ctrl, String hint) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey)),
+      const SizedBox(height: 8),
+      TextFormField(
+        controller: ctrl,
         decoration: _inputDec(hint),
         validator: (v) => v == null || v.isEmpty ? 'Required' : null,
       ),

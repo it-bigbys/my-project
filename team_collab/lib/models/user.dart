@@ -4,12 +4,14 @@ class User {
   final String email;
   final String role;
   final String avatarInitials;
+  final String? photoUrl;
 
   User({
     required this.id,
     required this.name,
     required this.email,
     this.role = 'Team Member',
+    this.photoUrl,
   }) : avatarInitials = _getInitials(name);
 
   static String _getInitials(String name) {
@@ -32,12 +34,14 @@ class User {
     String? name,
     String? email,
     String? role,
+    String? photoUrl,
   }) {
     return User(
       id: id,
       name: name ?? this.name,
       email: email ?? this.email,
       role: role ?? this.role,
+      photoUrl: photoUrl ?? this.photoUrl,
     );
   }
 }

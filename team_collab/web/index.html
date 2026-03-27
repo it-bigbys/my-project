@@ -5,6 +5,27 @@
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
   <meta name="description" content="TeamCollab - Team Collaboration App">
+  
+  <!-- Suppress Google Sign-In debug logging (comment out to enable) -->
+  <script>
+    window.__GAPI_LOGGER = {
+      error: () => {},
+      warn: () => {},
+      info: () => {},
+      log: () => {}
+    };
+    // Suppress GSI logger messages in console
+    if (!window.location.hostname.includes('localhost')) {
+      window.__GSI_LOGGER = { error: () => {}, warn: () => {}, info: () => {}, log: () => {} };
+    }
+  </script>
+
+  <!-- Google Sign-In Scripts -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+  <!-- Google Sign-In Client ID for Web -->
+  <meta name="google-signin-client_id" content="1015708422039-uik2ehutdgj9ophrts6s2ihfgd7i9icc.apps.googleusercontent.com">
+
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="TeamCollab">
@@ -14,5 +35,31 @@
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+    // Initialize Google Sign-In with proper configuration
+    window.addEventListener('load', function() {
+      if (typeof google !== 'undefined' && google.accounts) {
+        google.accounts.id.initialize({
+          client_id: '1015708422039-uik2ehutdgj9ophrts6s2ihfgd7i9icc.apps.googleusercontent.com',
+          callback: handleCredentialResponse,
+          // Suppress auto prompt on page load
+          auto_select: false,
+          use_fedcm_for_prompt: true,
+        });
+      }
+    });
+
+    // Callback handler for credential response
+    function handleCredentialResponse(response) {
+      console.log('✓ Google Sign-In successful');
+      if (window.flutter_inappwebview) {
+        // Notify Flutter of successful sign-in
+        window.flutter_inappwebview.callHandler('onGoogleSignIn', response.credential);
+      }
+    }
+
+    // Log configuration for debugging (remove in production)
+    console.log('✓ Google Sign-In configured for:', window.location.hostname);
+  </script>
 </body>
 </html>
